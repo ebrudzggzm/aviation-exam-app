@@ -11,7 +11,8 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { signInWithEmailAndPassword } from 'firebase/auth';
-import { auth } from '../../../shared/firebaseConfig';
+import { auth } from './firebase/firebaseConfig';
+
 
 export default function LoginScreen({ navigation }: any) {
   const [email, setEmail] = useState('');

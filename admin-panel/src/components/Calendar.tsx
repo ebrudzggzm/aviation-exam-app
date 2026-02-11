@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { signOut } from 'firebase/auth';
 import { collection, getDocs, addDoc, deleteDoc, doc } from 'firebase/firestore';
-import { auth, db } from '../../shared/firebaseConfig';
+import { auth, db } from '../../../shared/firebaseConfig';
 
 interface CalendarEvent {
   id: string;

@@ -235,3 +235,7 @@ table tr:hover {
   margin-bottom: 20px;
   border-left: 4px solid #3c3;
 }
+
+body {
+  background: red !important;
+}

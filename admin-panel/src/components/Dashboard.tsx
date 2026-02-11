@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { signOut } from 'firebase/auth';
 import { collection, getDocs, query, where } from 'firebase/firestore';
-import { auth, db } from '../../shared/firebaseConfig';
+import { auth, db } from '../../../shared/firebaseConfig';
 
 export default function Dashboard() {
   const [stats, setStats] = useState({

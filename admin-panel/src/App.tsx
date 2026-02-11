@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { onAuthStateChanged } from 'firebase/auth';
-import { auth } from '../shared/firebaseConfig';
+import { auth } from '../../shared/firebaseConfig';
 import Login from './components/Login';
 import Dashboard from './components/Dashboard';
 import UserList from './components/UserList';
 import Calendar from './components/Calendar';
-import './App.css';
+
 
 function App() {
   const [user, setUser] = useState<any>(null);

@@ -12,7 +12,7 @@ import {
 import { Picker } from '@react-native-picker/picker';
 import { createUserWithEmailAndPassword, sendEmailVerification } from 'firebase/auth';
 import { doc, setDoc } from 'firebase/firestore';
-import { auth, db } from '../../../shared/firebaseConfig';
+import { auth, db } from './firebase/firebaseConfig';
 
 export default function RegisterScreen({ navigation }: any) {
   const [email, setEmail] = useState('');

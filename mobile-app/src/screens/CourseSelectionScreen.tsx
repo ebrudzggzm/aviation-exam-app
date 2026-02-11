@@ -9,7 +9,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { doc, updateDoc, getDoc } from 'firebase/firestore';
-import { auth, db } from '../../../shared/firebaseConfig';
+import { auth, db } from './firebase/firebaseConfig';
 
 const COURSE_OPTIONS = {
   PPL: [

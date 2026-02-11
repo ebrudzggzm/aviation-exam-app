@@ -9,7 +9,7 @@ import {
 } from 'react-native';
 import { signOut } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
-import { auth, db } from '../../../shared/firebaseConfig';
+import { auth, db } from './firebase/firebaseConfig';
 
 export default function HomeScreen({ navigation }: any) {
   const [userData, setUserData] = useState<any>(null);
