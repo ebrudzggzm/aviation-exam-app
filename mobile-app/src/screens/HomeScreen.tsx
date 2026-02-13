@@ -6,31 +6,44 @@ import {
   StyleSheet,
   ScrollView,
   Alert,
+  ActivityIndicator,
 } from 'react-native';
-// import { signOut } from 'firebase/auth';
-// import { doc, getDoc } from 'firebase/firestore';
-// import { auth, db } from './firebase/firebaseConfig';
+import { signOut } from 'firebase/auth';
+import { doc, getDoc } from 'firebase/firestore';
+import { auth, db } from './firebase/firebaseConfig';
 
 export default function HomeScreen({ navigation }: any) {
   const [userData, setUserData] = useState<any>(null);
-  const [loading, setLoading] = useState(false);
-
-  // Geçici mock data
-  const mockUser = {
-    email: 'test@example.com',
-    group: 'PPL',
-    period: 'PPL aktif',
-    lessons: ['10', '20', '30'],
-    exams: {
-      pre: true,
-      final: false,
-    }
-  };
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Geçici olarak mock data kullan
-    setUserData(mockUser);
+    loadUserData();
   }, []);
+
+  // Ekrana her geldiğinde veriyi yenile
+  useEffect(() => {
+    const unsubscribe = navigation.addListener('focus', () => {
+      loadUserData();
+    });
+    return unsubscribe;
+  }, [navigation]);
+
+  const loadUserData = async () => {
+    try {
+      const user = auth.currentUser;
+      if (user) {
+        const userDoc = await getDoc(doc(db, 'users', user.uid));
+        if (userDoc.exists()) {
+          setUserData(userDoc.data());
+        }
+      }
+    } catch (error) {
+      console.error('Veri yüklenirken hata:', error);
+      Alert.alert('Hata', 'Kullanıcı verileri yüklenemedi');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleLogout = () => {
     Alert.alert(
@@ -42,8 +55,13 @@ export default function HomeScreen({ navigation }: any) {
           text: 'Çıkış',
           style: 'destructive',
           onPress: async () => {
-            // Firebase olmadan geçici
-            navigation.replace('Login');
+            try {
+              await signOut(auth);
+              navigation.replace('Login');
+            } catch (error) {
+              console.error('Logout error:', error);
+              Alert.alert('Hata', 'Çıkış yapılırken bir hata oluştu');
+            }
           },
         },
       ]
@@ -62,7 +80,8 @@ export default function HomeScreen({ navigation }: any) {
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
-        <Text>Yükleniyor...</Text>
+        <ActivityIndicator size="large" color="#0066cc" />
+        <Text style={styles.loadingText}>Yükleniyor...</Text>
       </View>
     );
   }
@@ -71,7 +90,7 @@ export default function HomeScreen({ navigation }: any) {
     <ScrollView style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.welcomeText}>Hoş Geldiniz!</Text>
-        <Text style={styles.emailText}>{mockUser.email}</Text>
+        <Text style={styles.emailText}>{auth.currentUser?.email}</Text>
       </View>
 
       {userData && (
@@ -139,11 +158,13 @@ export default function HomeScreen({ navigation }: any) {
       <View style={styles.card}>
         <Text style={styles.cardTitle}>Hesap</Text>
         
-        <View style={styles.warningBox}>
-          <Text style={styles.warningText}>
-            ℹ️ Firebase bağlantısı yapılınca e-posta doğrulama aktif olacak
-          </Text>
-        </View>
+        {!auth.currentUser?.emailVerified && (
+          <View style={styles.warningBox}>
+            <Text style={styles.warningText}>
+              ⚠️ E-posta adresiniz doğrulanmamış. Lütfen gelen kutunuzu kontrol edin.
+            </Text>
+          </View>
+        )}
 
         <TouchableOpacity style={styles.menuItem} onPress={handleLogout}>
           <Text style={[styles.menuItemText, styles.logoutText]}>
@@ -168,6 +189,12 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    backgroundColor: '#f5f5f5',
+  },
+  loadingText: {
+    marginTop: 10,
+    fontSize: 16,
+    color: '#666',
   },
   header: {
     backgroundColor: '#0066cc',
@@ -232,16 +259,16 @@ const styles = StyleSheet.create({
     color: '#d32f2f',
   },
   warningBox: {
-    backgroundColor: '#e3f2fd',
+    backgroundColor: '#fff3cd',
     padding: 12,
     borderRadius: 8,
     marginBottom: 15,
     borderLeftWidth: 4,
-    borderLeftColor: '#2196f3',
+    borderLeftColor: '#ffc107',
   },
   warningText: {
     fontSize: 14,
-    color: '#1565c0',
+    color: '#856404',
   },
   footer: {
     padding: 20,

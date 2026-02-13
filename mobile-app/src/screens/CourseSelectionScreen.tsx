@@ -8,8 +8,8 @@ import {
   Alert,
   ActivityIndicator,
 } from 'react-native';
-// import { doc, updateDoc, getDoc } from 'firebase/firestore';
-// import { auth, db } from './firebase/firebaseConfig';
+import { doc, updateDoc, getDoc } from 'firebase/firestore';
+import { auth, db } from './firebase/firebaseConfig';
 
 const COURSE_OPTIONS = {
   PPL: [
@@ -47,14 +47,37 @@ export default function CourseSelectionScreen({ navigation, route }: any) {
   const [includePreExam, setIncludePreExam] = useState(false);
   const [includeFinalExam, setIncludeFinalExam] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [initialLoading, setInitialLoading] = useState(false);
+  const [initialLoading, setInitialLoading] = useState(true);
 
   const courses = COURSE_OPTIONS[group as 'PPL' | 'ATPL'];
 
   useEffect(() => {
-    // Firebase olmadan geçici
-    setInitialLoading(false);
+    loadExistingData();
   }, []);
+
+  const loadExistingData = async () => {
+    try {
+      const user = auth.currentUser;
+      if (user) {
+        const userDoc = await getDoc(doc(db, 'users', user.uid));
+        if (userDoc.exists()) {
+          const data = userDoc.data();
+          if (data.lessons) {
+            setSelectedCourses(data.lessons);
+          }
+          if (data.exams) {
+            setIncludePreExam(data.exams.pre || false);
+            setIncludeFinalExam(data.exams.final || false);
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Veri yüklenirken hata:', error);
+      Alert.alert('Hata', 'Mevcut ders seçimleri yüklenemedi');
+    } finally {
+      setInitialLoading(false);
+    }
+  };
 
   const toggleCourse = (courseId: string) => {
     if (selectedCourses.includes(courseId)) {
@@ -79,23 +102,6 @@ export default function CourseSelectionScreen({ navigation, route }: any) {
     }
 
     setLoading(true);
-    
-    // Geçici olarak Firebase olmadan
-    setTimeout(() => {
-      setLoading(false);
-      Alert.alert(
-        'Başarılı',
-        'Ders seçiminiz kaydedildi! (Firebase bağlandığında gerçek kayıt yapılacak)',
-        [
-          {
-            text: 'Tamam',
-            onPress: () => navigation.replace('Home'),
-          },
-        ]
-      );
-    }, 1000);
-
-    /* Firebase bağlandığında bu kısmı kullan:
     try {
       const user = auth.currentUser;
       if (user) {
@@ -114,24 +120,24 @@ export default function CourseSelectionScreen({ navigation, route }: any) {
           [
             {
               text: 'Tamam',
-              onPress: () => navigation.replace('Home'),
+              onPress: () => navigation.navigate('Home'),
             },
           ]
         );
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Kayıt hatası:', error);
-      Alert.alert('Hata', 'Ders seçimi kaydedilirken bir hata oluştu');
+      Alert.alert('Hata', `Ders seçimi kaydedilirken bir hata oluştu: ${error.message}`);
     } finally {
       setLoading(false);
     }
-    */
   };
 
   if (initialLoading) {
     return (
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color="#0066cc" />
+        <Text style={styles.loadingText}>Yükleniyor...</Text>
       </View>
     );
   }
@@ -235,6 +241,12 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    backgroundColor: '#f5f5f5',
+  },
+  loadingText: {
+    marginTop: 10,
+    fontSize: 16,
+    color: '#666',
   },
   scrollView: {
     flex: 1,

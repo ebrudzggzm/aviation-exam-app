@@ -10,9 +10,9 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
-// import { createUserWithEmailAndPassword, sendEmailVerification } from 'firebase/auth';
-// import { doc, setDoc } from 'firebase/firestore';
-// import { auth, db } from './firebase/firebaseConfig';
+import { createUserWithEmailAndPassword, sendEmailVerification } from 'firebase/auth';
+import { doc, setDoc } from 'firebase/firestore';
+import { auth, db } from './firebase/firebaseConfig';
 
 export default function RegisterScreen({ navigation }: any) {
   const [email, setEmail] = useState('');
@@ -21,6 +21,8 @@ export default function RegisterScreen({ navigation }: any) {
   const [group, setGroup] = useState<'PPL' | 'ATPL'>('PPL');
   const [period, setPeriod] = useState('PPL aktif');
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const periodOptions = {
     PPL: ['PPL aktif'],
@@ -45,44 +47,37 @@ export default function RegisterScreen({ navigation }: any) {
     }
 
     setLoading(true);
-    
-    // Geçici olarak Firebase olmadan
-    setTimeout(() => {
-      setLoading(false);
-      Alert.alert(
-        'Başarılı',
-        'Kayıt başarılı! (Firebase bağlandığında gerçek kayıt yapılacak)',
-        [
-          {
-            text: 'Tamam',
-            onPress: () => navigation.navigate('CourseSelection', { group, period }),
-          },
-        ]
-      );
-    }, 1000);
-
-    /* Firebase bağlandığında bu kısmı kullan:
     try {
+      console.log('1. Kullanıcı oluşturuluyor...');
       // Kullanıcı oluştur
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
+      console.log('✓ Kullanıcı oluşturuldu:', user.uid);
 
+      console.log('2. E-posta doğrulama gönderiliyor...');
       // E-posta doğrulama gönder
       await sendEmailVerification(user);
+      console.log('✓ E-posta gönderildi');
 
+      console.log('3. Firestore\'a kaydediliyor...');
       // Firestore'a kullanıcı bilgilerini kaydet
       await setDoc(doc(db, 'users', user.uid), {
         email,
         group,
         period,
-        lessons: [], // Ders seçimi sonraki adımda
+        lessons: [],
+        exams: {
+          pre: false,
+          final: false,
+        },
         createdAt: new Date().toISOString(),
         emailVerified: false,
       });
+      console.log('✓ Firestore\'a kaydedildi');
 
       Alert.alert(
         'Başarılı',
-        'Kayıt başarılı! E-posta adresinize doğrulama linki gönderildi. Lütfen e-postanızı kontrol edin.',
+        'Kayıt başarılı! E-posta adresinize doğrulama linki gönderildi.',
         [
           {
             text: 'Tamam',
@@ -91,6 +86,7 @@ export default function RegisterScreen({ navigation }: any) {
         ]
       );
     } catch (error: any) {
+      console.error('Kayıt hatası:', error);
       let errorMessage = 'Kayıt olurken bir hata oluştu';
       
       if (error.code === 'auth/email-already-in-use') {
@@ -99,13 +95,16 @@ export default function RegisterScreen({ navigation }: any) {
         errorMessage = 'Geçersiz e-posta adresi';
       } else if (error.code === 'auth/weak-password') {
         errorMessage = 'Şifre çok zayıf';
+      } else if (error.code === 'permission-denied') {
+        errorMessage = 'Firestore izin hatası. Lütfen kuralları kontrol edin.';
+      } else {
+        errorMessage = `Hata: ${error.message}`;
       }
       
       Alert.alert('Hata', errorMessage);
     } finally {
       setLoading(false);
     }
-    */
   };
 
   return (
@@ -121,28 +120,50 @@ export default function RegisterScreen({ navigation }: any) {
           onChangeText={setEmail}
           autoCapitalize="none"
           keyboardType="email-address"
+          textContentType="emailAddress"
+          autoComplete="email"
           editable={!loading}
         />
 
         <Text style={styles.label}>Şifre</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="En az 6 karakter"
-          value={password}
-          onChangeText={setPassword}
-          secureTextEntry
-          editable={!loading}
-        />
+        <View style={styles.passwordContainer}>
+          <TextInput
+            style={styles.passwordInput}
+            placeholder="En az 6 karakter"
+            value={password}
+            onChangeText={setPassword}
+            secureTextEntry={!showPassword}
+            textContentType="none"
+            autoComplete="off"
+            editable={!loading}
+          />
+          <TouchableOpacity 
+            style={styles.eyeButton}
+            onPress={() => setShowPassword(!showPassword)}
+          >
+            <Text style={styles.eyeText}>{showPassword ? '🙈' : '👁️'}</Text>
+          </TouchableOpacity>
+        </View>
 
         <Text style={styles.label}>Şifre Tekrar</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="Şifrenizi tekrar girin"
-          value={confirmPassword}
-          onChangeText={setConfirmPassword}
-          secureTextEntry
-          editable={!loading}
-        />
+        <View style={styles.passwordContainer}>
+          <TextInput
+            style={styles.passwordInput}
+            placeholder="Şifrenizi tekrar girin"
+            value={confirmPassword}
+            onChangeText={setConfirmPassword}
+            secureTextEntry={!showConfirmPassword}
+            textContentType="none"
+            autoComplete="off"
+            editable={!loading}
+          />
+          <TouchableOpacity 
+            style={styles.eyeButton}
+            onPress={() => setShowConfirmPassword(!showConfirmPassword)}
+          >
+            <Text style={styles.eyeText}>{showConfirmPassword ? '🙈' : '👁️'}</Text>
+          </TouchableOpacity>
+        </View>
 
         <Text style={styles.label}>Grup Seçimi</Text>
         <View style={styles.pickerContainer}>
@@ -230,6 +251,26 @@ const styles = StyleSheet.create({
     fontSize: 16,
     borderWidth: 1,
     borderColor: '#ddd',
+  },
+  passwordContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#fff',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#ddd',
+  },
+  passwordInput: {
+    flex: 1,
+    padding: 15,
+    fontSize: 16,
+  },
+  eyeButton: {
+    padding: 10,
+    paddingRight: 15,
+  },
+  eyeText: {
+    fontSize: 20,
   },
   pickerContainer: {
     backgroundColor: '#fff',
