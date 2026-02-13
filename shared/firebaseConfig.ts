@@ -1,13 +1,11 @@
 // Firebase Configuration
 // https://console.firebase.google.com/
-
 import { initializeApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 import { getFunctions } from 'firebase/functions';
-import { getMessaging, isSupported } from 'firebase/messaging';
 
-// 🔥 Firebase config (ÖNCE TANIMLANMALI)
+// 🔥 Firebase config
 const firebaseConfig = {
   apiKey: "AIzaSyD-5AM4sAVs8hP_gjfdt9ubkSy8fx6--t4",
   authDomain: "aviation-exam-app.firebaseapp.com",
@@ -24,11 +22,5 @@ const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 export const db = getFirestore(app);
 export const functions = getFunctions(app);
-
-// ✅ Messaging (sadece web için, güvenli)
-export const getMessagingInstance = async () => {
-  const supported = await isSupported();
-  return supported ? getMessaging(app) : null;
-};
 
 export default app;

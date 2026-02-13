@@ -8,8 +8,8 @@ import {
   Alert,
   ActivityIndicator,
 } from 'react-native';
-import { doc, updateDoc, getDoc } from 'firebase/firestore';
-import { auth, db } from './firebase/firebaseConfig';
+// import { doc, updateDoc, getDoc } from 'firebase/firestore';
+// import { auth, db } from './firebase/firebaseConfig';
 
 const COURSE_OPTIONS = {
   PPL: [
@@ -47,36 +47,14 @@ export default function CourseSelectionScreen({ navigation, route }: any) {
   const [includePreExam, setIncludePreExam] = useState(false);
   const [includeFinalExam, setIncludeFinalExam] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [initialLoading, setInitialLoading] = useState(true);
+  const [initialLoading, setInitialLoading] = useState(false);
 
   const courses = COURSE_OPTIONS[group as 'PPL' | 'ATPL'];
 
   useEffect(() => {
-    loadExistingData();
+    // Firebase olmadan geçici
+    setInitialLoading(false);
   }, []);
-
-  const loadExistingData = async () => {
-    try {
-      const user = auth.currentUser;
-      if (user) {
-        const userDoc = await getDoc(doc(db, 'users', user.uid));
-        if (userDoc.exists()) {
-          const data = userDoc.data();
-          if (data.lessons) {
-            setSelectedCourses(data.lessons);
-          }
-          if (data.exams) {
-            setIncludePreExam(data.exams.pre || false);
-            setIncludeFinalExam(data.exams.final || false);
-          }
-        }
-      }
-    } catch (error) {
-      console.error('Veri yüklenirken hata:', error);
-    } finally {
-      setInitialLoading(false);
-    }
-  };
 
   const toggleCourse = (courseId: string) => {
     if (selectedCourses.includes(courseId)) {
@@ -101,6 +79,23 @@ export default function CourseSelectionScreen({ navigation, route }: any) {
     }
 
     setLoading(true);
+    
+    // Geçici olarak Firebase olmadan
+    setTimeout(() => {
+      setLoading(false);
+      Alert.alert(
+        'Başarılı',
+        'Ders seçiminiz kaydedildi! (Firebase bağlandığında gerçek kayıt yapılacak)',
+        [
+          {
+            text: 'Tamam',
+            onPress: () => navigation.replace('Home'),
+          },
+        ]
+      );
+    }, 1000);
+
+    /* Firebase bağlandığında bu kısmı kullan:
     try {
       const user = auth.currentUser;
       if (user) {
@@ -130,6 +125,7 @@ export default function CourseSelectionScreen({ navigation, route }: any) {
     } finally {
       setLoading(false);
     }
+    */
   };
 
   if (initialLoading) {

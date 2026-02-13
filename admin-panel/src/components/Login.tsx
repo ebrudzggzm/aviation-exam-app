@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { signInWithEmailAndPassword } from 'firebase/auth';
-import { auth, db } from '../../../shared/firebaseConfig';
+import { auth, db} from '../../../shared/firebaseConfig';
+import { doc, getDoc } from 'firebase/firestore';
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -17,10 +18,44 @@ export default function Login() {
       return;
     }
 
+  //   setLoading(true);
+  //   try {
+  //     await signInWithEmailAndPassword(auth, email, password);
+  //     // Başarılı giriş - App.tsx yönlendirecek
+  //   } catch (error: any) {
+  //     let errorMessage = 'Giriş yapılırken bir hata oluştu';
+      
+  //     if (error.code === 'auth/invalid-email') {
+  //       errorMessage = 'Geçersiz e-posta adresi';
+  //     } else if (error.code === 'auth/user-not-found') {
+  //       errorMessage = 'Kullanıcı bulunamadı';
+  //     } else if (error.code === 'auth/wrong-password') {
+  //       errorMessage = 'Hatalı şifre';
+  //     }
+      
+  //     setError(errorMessage);
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
+
     setLoading(true);
     try {
-      await signInWithEmailAndPassword(auth, email, password);
-      // Başarılı giriş - App.tsx yönlendirecek
+      // Firebase'e giriş yap
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      const user = userCredential.user;
+
+      // Admin kontrolü yap
+      const adminDoc = await getDoc(doc(db, 'admins', user.uid));
+      
+      if (!adminDoc.exists() || !adminDoc.data()?.isAdmin) {
+        // Admin değilse çıkış yap
+        await auth.signOut();
+        setError('Bu hesap yönetici değil. Giriş izni yok!');
+        return;
+      }
+
+      // Admin ise devam et (App.tsx yönlendirecek)
     } catch (error: any) {
       let errorMessage = 'Giriş yapılırken bir hata oluştu';
       

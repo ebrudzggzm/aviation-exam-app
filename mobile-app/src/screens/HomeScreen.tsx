@@ -7,33 +7,30 @@ import {
   ScrollView,
   Alert,
 } from 'react-native';
-import { signOut } from 'firebase/auth';
-import { doc, getDoc } from 'firebase/firestore';
-import { auth, db } from './firebase/firebaseConfig';
+// import { signOut } from 'firebase/auth';
+// import { doc, getDoc } from 'firebase/firestore';
+// import { auth, db } from './firebase/firebaseConfig';
 
 export default function HomeScreen({ navigation }: any) {
   const [userData, setUserData] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    loadUserData();
-  }, []);
-
-  const loadUserData = async () => {
-    try {
-      const user = auth.currentUser;
-      if (user) {
-        const userDoc = await getDoc(doc(db, 'users', user.uid));
-        if (userDoc.exists()) {
-          setUserData(userDoc.data());
-        }
-      }
-    } catch (error) {
-      console.error('Veri yüklenirken hata:', error);
-    } finally {
-      setLoading(false);
+  // Geçici mock data
+  const mockUser = {
+    email: 'test@example.com',
+    group: 'PPL',
+    period: 'PPL aktif',
+    lessons: ['10', '20', '30'],
+    exams: {
+      pre: true,
+      final: false,
     }
   };
+
+  useEffect(() => {
+    // Geçici olarak mock data kullan
+    setUserData(mockUser);
+  }, []);
 
   const handleLogout = () => {
     Alert.alert(
@@ -45,7 +42,7 @@ export default function HomeScreen({ navigation }: any) {
           text: 'Çıkış',
           style: 'destructive',
           onPress: async () => {
-            await signOut(auth);
+            // Firebase olmadan geçici
             navigation.replace('Login');
           },
         },
@@ -74,7 +71,7 @@ export default function HomeScreen({ navigation }: any) {
     <ScrollView style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.welcomeText}>Hoş Geldiniz!</Text>
-        <Text style={styles.emailText}>{auth.currentUser?.email}</Text>
+        <Text style={styles.emailText}>{mockUser.email}</Text>
       </View>
 
       {userData && (
@@ -142,13 +139,11 @@ export default function HomeScreen({ navigation }: any) {
       <View style={styles.card}>
         <Text style={styles.cardTitle}>Hesap</Text>
         
-        {!auth.currentUser?.emailVerified && (
-          <View style={styles.warningBox}>
-            <Text style={styles.warningText}>
-              ⚠️ E-posta adresiniz doğrulanmamış. Lütfen gelen kutunuzu kontrol edin.
-            </Text>
-          </View>
-        )}
+        <View style={styles.warningBox}>
+          <Text style={styles.warningText}>
+            ℹ️ Firebase bağlantısı yapılınca e-posta doğrulama aktif olacak
+          </Text>
+        </View>
 
         <TouchableOpacity style={styles.menuItem} onPress={handleLogout}>
           <Text style={[styles.menuItemText, styles.logoutText]}>
@@ -237,16 +232,16 @@ const styles = StyleSheet.create({
     color: '#d32f2f',
   },
   warningBox: {
-    backgroundColor: '#fff3cd',
+    backgroundColor: '#e3f2fd',
     padding: 12,
     borderRadius: 8,
     marginBottom: 15,
     borderLeftWidth: 4,
-    borderLeftColor: '#ffc107',
+    borderLeftColor: '#2196f3',
   },
   warningText: {
     fontSize: 14,
-    color: '#856404',
+    color: '#1565c0',
   },
   footer: {
     padding: 20,

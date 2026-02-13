@@ -8,5 +8,8 @@ export default defineConfig({
       '@': '/src',
     },
   },
+  optimizeDeps: {
+    include: ['firebase/app', 'firebase/auth', 'firebase/firestore', 'firebase/functions', 'idb'],
+    exclude: ['firebase/messaging']
+  }
 })
-

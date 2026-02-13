@@ -41,18 +41,23 @@ function App() {
           path="/login" 
           element={user ? <Navigate to="/" /> : <Login />} 
         />
-        <Route
+        {/* <Route
           path="/"
-          element={user ? <Dashboard /> : <Navigate to="/login" />}
-        />
-        <Route
+          element={user ? <Dashboard /> : <Navigate to="/dashboard" />}
+        /> */}
+        <Route path="/calendar" element={<Dashboard />} />
+        {/* <Route
           path="/users"
           element={user ? <UserList /> : <Navigate to="/login" />}
-        />
-        <Route
+          
+        /> */}
+        <Route path="/userlist" element={<UserList />} />
+        {/* <Route
           path="/calendar"
-          element={user ? <Calendar /> : <Navigate to="/login" />}
-        />
+          element={user ? <Calendar /> : <Navigate to="/calendar" />}
+        /> */}
+        <Route path="/calendar" element={<Calendar />} />
+
       </Routes>
     </BrowserRouter>
   );

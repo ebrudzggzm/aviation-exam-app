@@ -10,9 +10,9 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
-import { createUserWithEmailAndPassword, sendEmailVerification } from 'firebase/auth';
-import { doc, setDoc } from 'firebase/firestore';
-import { auth, db } from './firebase/firebaseConfig';
+// import { createUserWithEmailAndPassword, sendEmailVerification } from 'firebase/auth';
+// import { doc, setDoc } from 'firebase/firestore';
+// import { auth, db } from './firebase/firebaseConfig';
 
 export default function RegisterScreen({ navigation }: any) {
   const [email, setEmail] = useState('');
@@ -45,6 +45,23 @@ export default function RegisterScreen({ navigation }: any) {
     }
 
     setLoading(true);
+    
+    // Geçici olarak Firebase olmadan
+    setTimeout(() => {
+      setLoading(false);
+      Alert.alert(
+        'Başarılı',
+        'Kayıt başarılı! (Firebase bağlandığında gerçek kayıt yapılacak)',
+        [
+          {
+            text: 'Tamam',
+            onPress: () => navigation.navigate('CourseSelection', { group, period }),
+          },
+        ]
+      );
+    }, 1000);
+
+    /* Firebase bağlandığında bu kısmı kullan:
     try {
       // Kullanıcı oluştur
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
@@ -88,6 +105,7 @@ export default function RegisterScreen({ navigation }: any) {
     } finally {
       setLoading(false);
     }
+    */
   };
 
   return (
