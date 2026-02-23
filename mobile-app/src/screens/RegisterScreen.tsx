@@ -25,7 +25,7 @@ export default function RegisterScreen({ navigation }: any) {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const periodOptions = {
-    PPL: ['PPL aktif'],
+    PPL: ['PPL aktif','PPL akademik tamamlamış'],
     ATPL: ['ATPL aktif', 'ATPL akademik tamamlamış'],
   };
 

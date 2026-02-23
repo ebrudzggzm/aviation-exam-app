@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { signInWithEmailAndPassword } from 'firebase/auth';
-import { auth, db} from '../../../shared/firebaseConfig';
+import { auth, db } from '../firebase/firebaseConfig';
 import { doc, getDoc } from 'firebase/firestore';
 
 export default function Login() {
@@ -18,48 +18,26 @@ export default function Login() {
       return;
     }
 
-  //   setLoading(true);
-  //   try {
-  //     await signInWithEmailAndPassword(auth, email, password);
-  //     // Başarılı giriş - App.tsx yönlendirecek
-  //   } catch (error: any) {
-  //     let errorMessage = 'Giriş yapılırken bir hata oluştu';
-      
-  //     if (error.code === 'auth/invalid-email') {
-  //       errorMessage = 'Geçersiz e-posta adresi';
-  //     } else if (error.code === 'auth/user-not-found') {
-  //       errorMessage = 'Kullanıcı bulunamadı';
-  //     } else if (error.code === 'auth/wrong-password') {
-  //       errorMessage = 'Hatalı şifre';
-  //     }
-      
-  //     setError(errorMessage);
-  //   } finally {
-  //     setLoading(false);
-  //   }
-  // };
-
     setLoading(true);
     try {
-      // Firebase'e giriş yap
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
 
-      // Admin kontrolü yap
-      const adminDoc = await getDoc(doc(db, 'admins', user.uid));
+      // users koleksiyonundan admin kontrolü
+      const userDoc = await getDoc(doc(db, 'users', user.uid));
       
-      if (!adminDoc.exists() || !adminDoc.data()?.isAdmin) {
-        // Admin değilse çıkış yap
+      if (!userDoc.exists() || userDoc.data()?.isAdmin !== true) {
         await auth.signOut();
         setError('Bu hesap yönetici değil. Giriş izni yok!');
         return;
       }
-
-      // Admin ise devam et (App.tsx yönlendirecek)
+      // Admin ise devam et - App.tsx yönlendirecek
     } catch (error: any) {
       let errorMessage = 'Giriş yapılırken bir hata oluştu';
       
-      if (error.code === 'auth/invalid-email') {
+      if (error.code === 'auth/invalid-credential') {
+        errorMessage = 'E-posta veya şifre hatalı';
+      } else if (error.code === 'auth/invalid-email') {
         errorMessage = 'Geçersiz e-posta adresi';
       } else if (error.code === 'auth/user-not-found') {
         errorMessage = 'Kullanıcı bulunamadı';
@@ -78,9 +56,7 @@ export default function Login() {
       <div className="login-box">
         <h1>Yönetim Paneli</h1>
         <p>Havacılık Sınav Takip Sistemi</p>
-
         {error && <div className="error-message">{error}</div>}
-
         <form onSubmit={handleLogin}>
           <div className="form-group">
             <label>E-posta</label>
@@ -92,7 +68,6 @@ export default function Login() {
               disabled={loading}
             />
           </div>
-
           <div className="form-group">
             <label>Şifre</label>
             <input
@@ -103,7 +78,6 @@ export default function Login() {
               disabled={loading}
             />
           </div>
-
           <button type="submit" className="btn" disabled={loading}>
             {loading ? 'Giriş Yapılıyor...' : 'Giriş Yap'}
           </button>
