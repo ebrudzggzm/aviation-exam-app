@@ -6,8 +6,9 @@ import { auth, db } from '../firebase/firebaseConfig';
 import * as XLSX from 'xlsx';
 
 interface ExamDetail {
-  month: string;
+  preMonth: string;
   pre: boolean;
+  finalMonth: string;
   final: boolean;
 }
 
@@ -48,16 +49,12 @@ export default function UserList() {
     return true;
   });
 
-  // Ders detayını "10: Mart: Ön" formatında göster
   const formatExamDetail = (courseId: string, detail?: ExamDetail) => {
     if (!detail) return courseId;
-    const parts = [courseId];
-    if (detail.month) parts.push(detail.month);
-    const types = [];
-    if (detail.pre) types.push('Ön');
-    if (detail.final) types.push('Son');
-    if (types.length) parts.push(types.join('+'));
-    return parts.join(': ');
+    const parts: string[] = [courseId];
+    if (detail.pre) parts.push(`Ön: ${detail.preMonth || '?'}`);
+    if (detail.final) parts.push(`Son: ${detail.finalMonth || '?'}`);
+    return parts.join(' | ');
   };
 
   const exportToExcel = () => {
@@ -66,7 +63,9 @@ export default function UserList() {
       'Grup': user.group,
       'Dönem': user.period,
       'Ders Sayısı': user.lessons?.length || 0,
-      'Ders Detayları': user.lessons?.map(id => formatExamDetail(id, user.examDetails?.[id])).join(' | ') || '',
+      'Ders Detayları': user.lessons
+        ?.map(id => formatExamDetail(id, user.examDetails?.[id]))
+        .join(' | ') || '',
       'Kayıt Tarihi': new Date(user.createdAt).toLocaleDateString('tr-TR'),
     }));
 
@@ -116,8 +115,11 @@ export default function UserList() {
           <div style={{ display: 'flex', gap: '15px', marginBottom: '20px', padding: '15px', backgroundColor: '#f8f9fa', borderRadius: '8px' }}>
             <div>
               <label style={{ display: 'block', marginBottom: '5px', fontWeight: 600 }}>Grup Filtrele:</label>
-              <select value={filter.group} onChange={(e) => setFilter({ ...filter, group: e.target.value })}
-                style={{ padding: '8px 12px', borderRadius: '4px', border: '1px solid #ddd', backgroundColor: 'white' }}>
+              <select
+                value={filter.group}
+                onChange={(e) => setFilter({ ...filter, group: e.target.value })}
+                style={{ padding: '8px 12px', borderRadius: '4px', border: '1px solid #ddd', backgroundColor: 'white' }}
+              >
                 <option value="all">Tümü</option>
                 <option value="PPL">PPL</option>
                 <option value="ATPL">ATPL</option>
@@ -125,8 +127,11 @@ export default function UserList() {
             </div>
             <div>
               <label style={{ display: 'block', marginBottom: '5px', fontWeight: 600 }}>Dönem Filtrele:</label>
-              <select value={filter.period} onChange={(e) => setFilter({ ...filter, period: e.target.value })}
-                style={{ padding: '8px 12px', borderRadius: '4px', border: '1px solid #ddd', backgroundColor: 'white' }}>
+              <select
+                value={filter.period}
+                onChange={(e) => setFilter({ ...filter, period: e.target.value })}
+                style={{ padding: '8px 12px', borderRadius: '4px', border: '1px solid #ddd', backgroundColor: 'white' }}
+              >
                 <option value="all">Tümü</option>
                 <option value="PPL aktif">PPL aktif</option>
                 <option value="ATPL aktif">ATPL aktif</option>
@@ -170,20 +175,40 @@ export default function UserList() {
                       <td style={{ textAlign: 'center' }}>{user.lessons?.length || 0}</td>
                       <td style={{ fontSize: '12px' }}>
                         {user.lessons?.length > 0
-                          ? user.lessons.map(id => (
-                              <div key={id} style={{ marginBottom: 2 }}>
-                                <span style={{ fontWeight: 600 }}>{id}</span>
-                                {user.examDetails?.[id]?.month && (
-                                  <span style={{ color: '#555' }}>{': '}{user.examDetails[id].month}</span>
-                                )}
-                                {user.examDetails?.[id]?.pre && (
-                                  <span style={{ marginLeft: 4, padding: '1px 5px', borderRadius: 4, backgroundColor: '#d4edda', color: '#155724', fontSize: 11 }}>Ön</span>
-                                )}
-                                {user.examDetails?.[id]?.final && (
-                                  <span style={{ marginLeft: 4, padding: '1px 5px', borderRadius: 4, backgroundColor: '#cce5ff', color: '#004085', fontSize: 11 }}>Son</span>
-                                )}
-                              </div>
-                            ))
+                          ? user.lessons.map(id => {
+                              const d = user.examDetails?.[id];
+                              return (
+                                <div key={id} style={{ marginBottom: 4 }}>
+                                  <span style={{ fontWeight: 600 }}>{id}</span>
+                                  {d?.pre && (
+                                    <>
+                                      <span style={{
+                                        marginLeft: 4, padding: '1px 5px', borderRadius: 4,
+                                        backgroundColor: '#d4edda', color: '#155724', fontSize: 11,
+                                      }}>
+                                        Ön
+                                      </span>
+                                      {d.preMonth && (
+                                        <span style={{ color: '#555', fontSize: 11 }}> {d.preMonth}</span>
+                                      )}
+                                    </>
+                                  )}
+                                  {d?.final && (
+                                    <>
+                                      <span style={{
+                                        marginLeft: 4, padding: '1px 5px', borderRadius: 4,
+                                        backgroundColor: '#cce5ff', color: '#004085', fontSize: 11,
+                                      }}>
+                                        Son
+                                      </span>
+                                      {d.finalMonth && (
+                                        <span style={{ color: '#555', fontSize: 11 }}> {d.finalMonth}</span>
+                                      )}
+                                    </>
+                                  )}
+                                </div>
+                              );
+                            })
                           : '-'}
                       </td>
                       <td style={{ fontSize: '12px' }}>

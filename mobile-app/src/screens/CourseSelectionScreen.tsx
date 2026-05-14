@@ -47,8 +47,7 @@ const MONTHS = [
   'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık',
 ];
 
-// Her ders için: { courseId: { month: 'Mart', pre: true, final: false } }
-type ExamDetail = { month: string; pre: boolean; final: boolean };
+type ExamDetail = { preMonth: string; pre: boolean; finalMonth: string; final: boolean };
 type ExamDetails = Record<string, ExamDetail>;
 
 export default function CourseSelectionScreen({ navigation, route }: any) {
@@ -100,7 +99,10 @@ export default function CourseSelectionScreen({ navigation, route }: any) {
       setExamDetails(updated);
     } else {
       setSelectedCourses([...selectedCourses, courseId]);
-      setExamDetails(prev => ({ ...prev, [courseId]: { month: '', pre: false, final: false } }));
+      setExamDetails(prev => ({
+        ...prev,
+        [courseId]: { preMonth: '', pre: false, finalMonth: '', final: false },
+      }));
     }
   };
 
@@ -176,24 +178,33 @@ export default function CourseSelectionScreen({ navigation, route }: any) {
           <Text style={styles.sectionTitle}>Ders Seçimi</Text>
           <Text style={styles.info}>{selectedCourses.length} ders seçildi</Text>
           <View style={styles.buttonRow}>
-            <TouchableOpacity style={styles.utilButton} onPress={() => {
-              setSelectedCourses(courses.map(c => c.id));
-              const all: ExamDetails = {};
-              courses.forEach(c => { all[c.id] = { month: '', pre: false, final: false }; });
-              setExamDetails(all);
-            }}>
+            <TouchableOpacity
+              style={styles.utilButton}
+              onPress={() => {
+                setSelectedCourses(courses.map(c => c.id));
+                const all: ExamDetails = {};
+                courses.forEach(c => {
+                  all[c.id] = { preMonth: '', pre: false, finalMonth: '', final: false };
+                });
+                setExamDetails(all);
+              }}
+            >
               <Text style={styles.utilButtonText}>Tümünü Seç</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.utilButton} onPress={() => { setSelectedCourses([]); setExamDetails({}); }}>
+            <TouchableOpacity
+              style={styles.utilButton}
+              onPress={() => { setSelectedCourses([]); setExamDetails({}); }}
+            >
               <Text style={styles.utilButtonText}>Temizle</Text>
             </TouchableOpacity>
           </View>
 
           {courses.map((course) => {
             const isSelected = selectedCourses.includes(course.id);
-            const detail = examDetails[course.id] ?? { month: '', pre: false, final: false };
+            const detail = examDetails[course.id] ?? { preMonth: '', pre: false, finalMonth: '', final: false };
             return (
               <View key={course.id} style={styles.courseBlock}>
+
                 {/* Ders satırı */}
                 <TouchableOpacity
                   style={[styles.courseItem, isSelected && styles.courseItemSelected]}
@@ -205,39 +216,58 @@ export default function CourseSelectionScreen({ navigation, route }: any) {
                   <Text style={styles.courseText}>{course.name}</Text>
                 </TouchableOpacity>
 
-                {/* Detay satırı - sadece seçiliyse */}
+                {/* Detay bloğu - sadece seçiliyse */}
                 {isSelected && (
-                  <View style={styles.detailRow}>
-                    {/* Ay picker */}
-                    <View style={styles.monthPickerWrap}>
-                      <Picker
-                        selectedValue={detail.month}
-                        onValueChange={(val) => updateExamDetail(course.id, 'month', val)}
-                        mode="dropdown"
-                        style={styles.monthPickerStyle}
+                  <View style={styles.detailBlock}>
+
+                    {/* Ön Sınav satırı */}
+                    <View style={styles.detailRow}>
+                      <TouchableOpacity
+                        style={[styles.examTypeBtn, detail.pre && styles.examTypeBtnActive]}
+                        onPress={() => updateExamDetail(course.id, 'pre', !detail.pre)}
                       >
-                        <Picker.Item label="Ay seçin" value="" />
-                        {MONTHS.map((m) => (
-                          <Picker.Item key={m} label={m} value={m} />
-                        ))}
-                      </Picker>
+                        <Text style={[styles.examTypeTxt, detail.pre && styles.examTypeTxtActive]}>Ön</Text>
+                      </TouchableOpacity>
+                      <View style={[styles.monthPickerWrap, !detail.pre && styles.disabledPicker]}>
+                        <Picker
+                          enabled={detail.pre}
+                          selectedValue={detail.preMonth}
+                          onValueChange={(val) => updateExamDetail(course.id, 'preMonth', val)}
+                          mode="dropdown"
+                          style={styles.monthPickerStyle}
+                        >
+                          <Picker.Item label="Ay seçin" value="" />
+                          {MONTHS.map((m) => (
+                            <Picker.Item key={m} label={m} value={m} />
+                          ))}
+                        </Picker>
+                      </View>
                     </View>
 
-                    {/* Ön Sınav checkbox */}
-                    <TouchableOpacity
-                      style={[styles.examTypeBtn, detail.pre && styles.examTypeBtnActive]}
-                      onPress={() => updateExamDetail(course.id, 'pre', !detail.pre)}
-                    >
-                      <Text style={[styles.examTypeTxt, detail.pre && styles.examTypeTxtActive]}>Ön</Text>
-                    </TouchableOpacity>
+                    {/* Son Sınav satırı */}
+                    <View style={styles.detailRow}>
+                      <TouchableOpacity
+                        style={[styles.examTypeBtn, detail.final && styles.examTypeBtnActive]}
+                        onPress={() => updateExamDetail(course.id, 'final', !detail.final)}
+                      >
+                        <Text style={[styles.examTypeTxt, detail.final && styles.examTypeTxtActive]}>Son</Text>
+                      </TouchableOpacity>
+                      <View style={[styles.monthPickerWrap, !detail.final && styles.disabledPicker]}>
+                        <Picker
+                          enabled={detail.final}
+                          selectedValue={detail.finalMonth}
+                          onValueChange={(val) => updateExamDetail(course.id, 'finalMonth', val)}
+                          mode="dropdown"
+                          style={styles.monthPickerStyle}
+                        >
+                          <Picker.Item label="Ay seçin" value="" />
+                          {MONTHS.map((m) => (
+                            <Picker.Item key={m} label={m} value={m} />
+                          ))}
+                        </Picker>
+                      </View>
+                    </View>
 
-                    {/* Son Sınav checkbox */}
-                    <TouchableOpacity
-                      style={[styles.examTypeBtn, detail.final && styles.examTypeBtnActive]}
-                      onPress={() => updateExamDetail(course.id, 'final', !detail.final)}
-                    >
-                      <Text style={[styles.examTypeTxt, detail.final && styles.examTypeTxtActive]}>Son</Text>
-                    </TouchableOpacity>
                   </View>
                 )}
               </View>
@@ -275,10 +305,16 @@ const styles = StyleSheet.create({
   },
   sectionTitle: { fontSize: 18, fontWeight: 'bold', color: '#333', marginBottom: 12 },
   label: { fontSize: 14, fontWeight: '600', color: '#666', marginTop: 10, marginBottom: 4 },
-  pickerContainer: { backgroundColor: '#f9f9f9', borderRadius: 8, borderWidth: 1, borderColor: '#ddd', overflow: 'hidden', marginBottom: 8 },
+  pickerContainer: {
+    backgroundColor: '#f9f9f9', borderRadius: 8, borderWidth: 1,
+    borderColor: '#ddd', overflow: 'hidden', marginBottom: 8,
+  },
   info: { fontSize: 14, color: '#0066cc', fontWeight: '600', marginBottom: 10 },
   buttonRow: { flexDirection: 'row', gap: 10, marginBottom: 12 },
-  utilButton: { flex: 1, backgroundColor: '#fff', padding: 10, borderRadius: 8, borderWidth: 1, borderColor: '#0066cc', alignItems: 'center' },
+  utilButton: {
+    flex: 1, backgroundColor: '#fff', padding: 10, borderRadius: 8,
+    borderWidth: 1, borderColor: '#0066cc', alignItems: 'center',
+  },
   utilButtonText: { color: '#0066cc', fontWeight: '600' },
   courseBlock: { marginBottom: 6 },
   courseItem: {
@@ -286,25 +322,41 @@ const styles = StyleSheet.create({
     padding: 13, borderRadius: 8, borderWidth: 2, borderColor: '#ddd',
   },
   courseItemSelected: { borderColor: '#0066cc', backgroundColor: '#e6f2ff' },
-  checkbox: { width: 24, height: 24, borderRadius: 4, borderWidth: 2, borderColor: '#0066cc', marginRight: 12, justifyContent: 'center', alignItems: 'center' },
+  checkbox: {
+    width: 24, height: 24, borderRadius: 4, borderWidth: 2,
+    borderColor: '#0066cc', marginRight: 12, justifyContent: 'center', alignItems: 'center',
+  },
   checkmark: { color: '#0066cc', fontSize: 18, fontWeight: 'bold' },
   courseText: { fontSize: 15, color: '#333', flex: 1 },
 
-  // Detay satırı
+  detailBlock: {
+    backgroundColor: '#f0f7ff',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#c0d8f0',
+    marginTop: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+  },
   detailRow: {
-    flexDirection: 'row', alignItems: 'center',
-    backgroundColor: '#f0f7ff', borderRadius: 8,
-    borderWidth: 1, borderColor: '#c0d8f0',
-    marginTop: 4, paddingHorizontal: 8, overflow: 'hidden', minHeight: 48,
+    flexDirection: 'row',
+    alignItems: 'center',
+    minHeight: 48,
   },
   monthPickerWrap: { flex: 1 },
   monthPickerStyle: {
     width: '100%',
     ...Platform.select({ android: { color: '#333' }, ios: {} }),
   },
+  disabledPicker: { opacity: 0.4 },
   examTypeBtn: {
-    paddingHorizontal: 12, paddingVertical: 6, borderRadius: 6,
-    borderWidth: 1, borderColor: '#0066cc', marginLeft: 6,
+    width: 48,
+    paddingVertical: 6,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: '#0066cc',
+    marginRight: 8,
+    alignItems: 'center',
   },
   examTypeBtnActive: { backgroundColor: '#0066cc' },
   examTypeTxt: { fontSize: 13, color: '#0066cc', fontWeight: '600' },
