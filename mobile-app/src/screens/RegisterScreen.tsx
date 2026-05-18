@@ -46,6 +46,12 @@ export default function RegisterScreen({ navigation }: any) {
       return;
     }
 
+    // E-posta uzantısı validasyonu burada ekleniyor
+    if (!email.endsWith('@student.atilim.edu.tr')) {
+      Alert.alert('Hata', 'Sadece @student.atilim.edu.tr uzantılı e-posta adresleri ile kayıt olabilirsiniz.');
+      return;
+    }
+
     setLoading(true);
     try {
       console.log('1. Kullanıcı oluşturuluyor...');
@@ -115,7 +121,7 @@ export default function RegisterScreen({ navigation }: any) {
         <Text style={styles.label}>E-posta</Text>
         <TextInput
           style={styles.input}
-          placeholder="ornek@email.com"
+          placeholder="adsoyad@student.atilim.edu.tr" // placeholder'ı güncelledik
           value={email}
           onChangeText={setEmail}
           autoCapitalize="none"

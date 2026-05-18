@@ -12,17 +12,44 @@ import { signOut } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
 import { auth, db } from './firebase/firebaseConfig';
 
+// Bu fonksiyonları doğrudan HomeScreen.js içine taşıdık
+// Bu kısmı HomeScreen bileşeninin dışına tanımlayarak her render'da yeniden oluşmasını engelliyoruz
+const isEditingAllowed = () => {
+  const currentDate = new Date();
+  const dayOfMonth = currentDate.getDate();
+  // Ayın ilk 10 günü içinde miyiz kontrol et
+  return dayOfMonth <= 10;
+};
+
+const getEditingRestrictionMessage = () => {
+  const currentDate = new Date();
+  const dayOfMonth = currentDate.getDate();
+
+  if (dayOfMonth > 10) {
+    const nextMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1);
+    const firstDayOfNextMonth = new Date(nextMonth.getFullYear(), nextMonth.getMonth(), 1);
+
+    return `Aylık veri girişi, her ayın 1'i ile 10'u arasında yapılabilir. Sonraki veri girişi dönemi ${firstDayOfNextMonth.toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' })} tarihinde başlayacaktır.`;
+  }
+  return ''; // İzin verildiğinde boş mesaj
+};
+
 export default function HomeScreen({ navigation }: any) {
   const [userData, setUserData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [canEnterMonthlyData, setCanEnterMonthlyData] = useState(true);
 
   useEffect(() => {
     loadUserData();
+    const allowed = isEditingAllowed();
+    setCanEnterMonthlyData(allowed);
   }, []);
 
   useEffect(() => {
     const unsubscribe = navigation.addListener('focus', () => {
       loadUserData();
+      const allowed = isEditingAllowed();
+      setCanEnterMonthlyData(allowed);
     });
     return unsubscribe;
   }, [navigation]);
@@ -81,6 +108,19 @@ export default function HomeScreen({ navigation }: any) {
     });
   };
 
+  const handleMonthlyDataEntry = () => {
+    if (!canEnterMonthlyData) {
+      Alert.alert(
+        "İşlem Engellendi",
+        getEditingRestrictionMessage(),
+        [{ text: "Tamam" }]
+      );
+      return;
+    }
+    Alert.alert('Yakında', 'Aylık veri girişi özelliği yakında eklenecek');
+    // navigation.navigate('MonthlyDataEntryScreen');
+  };
+
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
@@ -136,11 +176,19 @@ export default function HomeScreen({ navigation }: any) {
         </TouchableOpacity>
 
         <TouchableOpacity
-          style={styles.menuItem}
-          onPress={() => Alert.alert('Yakında', 'Veri girişi özelliği yakında eklenecek')}
+          style={[styles.menuItem, !canEnterMonthlyData && styles.disabledMenuItem]}
+          onPress={handleMonthlyDataEntry}
+          disabled={!canEnterMonthlyData}
         >
-          <Text style={styles.menuItemText}>📝 Aylık Veri Girişi</Text>
+          <Text style={[styles.menuItemText, !canEnterMonthlyData && styles.disabledMenuItemText]}>
+            📝 Aylık Veri Girişi
+          </Text>
         </TouchableOpacity>
+        {!canEnterMonthlyData && (
+          <Text style={styles.restrictionInfoText}>
+            {getEditingRestrictionMessage()}
+          </Text>
+        )}
 
         <TouchableOpacity
           style={styles.menuItem}
@@ -208,4 +256,19 @@ const styles = StyleSheet.create({
   warningText: { fontSize: 14, color: '#856404' },
   footer: { padding: 20, alignItems: 'center' },
   footerText: { fontSize: 12, color: '#999' },
+
+  disabledMenuItem: {
+    backgroundColor: '#f0f0f0',
+  },
+  disabledMenuItemText: {
+    color: '#999',
+  },
+  restrictionInfoText: {
+    fontSize: 12,
+    color: '#e65100',
+    textAlign: 'center',
+    marginTop: 5,
+    marginBottom: 10,
+    paddingHorizontal: 10,
+  },
 });
