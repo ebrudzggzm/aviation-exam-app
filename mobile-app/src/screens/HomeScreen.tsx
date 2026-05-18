@@ -14,14 +14,14 @@ import { auth, db } from './firebase/firebaseConfig';
 
 // Bu fonksiyonları doğrudan HomeScreen.js içine taşıdık
 // Bu kısmı HomeScreen bileşeninin dışına tanımlayarak her render'da yeniden oluşmasını engelliyoruz
-const isEditingAllowed = () => {
+const isCourseEditingAllowed = () => {
   const currentDate = new Date();
   const dayOfMonth = currentDate.getDate();
   // Ayın ilk 10 günü içinde miyiz kontrol et
-  return dayOfMonth <= 10;
+  return dayOfMonth <= 20;
 };
 
-const getEditingRestrictionMessage = () => {
+const getCourseEditingRestrictionMessage = () => {
   const currentDate = new Date();
   const dayOfMonth = currentDate.getDate();
 
@@ -29,7 +29,7 @@ const getEditingRestrictionMessage = () => {
     const nextMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1);
     const firstDayOfNextMonth = new Date(nextMonth.getFullYear(), nextMonth.getMonth(), 1);
 
-    return `Aylık veri girişi, her ayın 1'i ile 10'u arasında yapılabilir. Sonraki veri girişi dönemi ${firstDayOfNextMonth.toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' })} tarihinde başlayacaktır.`;
+    return `Ders seçimi düzenleme işlemi, her ayın 1'i ile 10'u arasında yapılabilir. Sonraki ders seçimi dönemi ${firstDayOfNextMonth.toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' })} tarihinde başlayacaktır.`;
   }
   return ''; // İzin verildiğinde boş mesaj
 };
@@ -37,19 +37,20 @@ const getEditingRestrictionMessage = () => {
 export default function HomeScreen({ navigation }: any) {
   const [userData, setUserData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const [canEnterMonthlyData, setCanEnterMonthlyData] = useState(true);
+  // Ders seçimi düzenleme izni için yeni state
+  const [canEditCourses, setCanEditCourses] = useState(true);
 
   useEffect(() => {
     loadUserData();
-    const allowed = isEditingAllowed();
-    setCanEnterMonthlyData(allowed);
+    const allowed = isCourseEditingAllowed();
+    setCanEditCourses(allowed);
   }, []);
 
   useEffect(() => {
     const unsubscribe = navigation.addListener('focus', () => {
       loadUserData();
-      const allowed = isEditingAllowed();
-      setCanEnterMonthlyData(allowed);
+      const allowed = isCourseEditingAllowed();
+      setCanEditCourses(allowed);
     });
     return unsubscribe;
   }, [navigation]);
@@ -63,11 +64,20 @@ export default function HomeScreen({ navigation }: any) {
           const data = userDoc.data();
           setUserData(data);
 
-          if (!data.lessons || data.lessons.length === 0) {
+          // Eğer dersler boşsa ve ders seçimi düzenleme izni varsa CourseSelection'a yönlendir
+          if ((!data.lessons || data.lessons.length === 0) && isCourseEditingAllowed()) {
             navigation.replace('CourseSelection', {
               group: data.group,
               period: data.period,
             });
+          }
+          // Eğer dersler boşsa ve düzenleme izni yoksa, kullanıcıya bilgi ver
+          else if (!data.lessons || data.lessons.length === 0) {
+            Alert.alert(
+              "Ders Seçimi Gerekli",
+              "Henüz ders seçimi yapmadınız. Ders seçimi işlemi, her ayın 1'i ile 10'u arasında yapılabilir.",
+              [{ text: "Tamam" }]
+            );
           }
         }
       }
@@ -102,6 +112,14 @@ export default function HomeScreen({ navigation }: any) {
   };
 
   const handleEditCourses = () => {
+    if (!canEditCourses) {
+      Alert.alert(
+        "İşlem Engellendi",
+        getCourseEditingRestrictionMessage(),
+        [{ text: "Tamam" }]
+      );
+      return;
+    }
     navigation.navigate('CourseSelection', {
       group: userData?.group ?? 'ATPL',
       period: userData?.period ?? '',
@@ -109,14 +127,6 @@ export default function HomeScreen({ navigation }: any) {
   };
 
   const handleMonthlyDataEntry = () => {
-    if (!canEnterMonthlyData) {
-      Alert.alert(
-        "İşlem Engellendi",
-        getEditingRestrictionMessage(),
-        [{ text: "Tamam" }]
-      );
-      return;
-    }
     Alert.alert('Yakında', 'Aylık veri girişi özelliği yakında eklenecek');
     // navigation.navigate('MonthlyDataEntryScreen');
   };
@@ -171,24 +181,31 @@ export default function HomeScreen({ navigation }: any) {
       <View style={styles.card}>
         <Text style={styles.cardTitle}>Menü</Text>
 
-        <TouchableOpacity style={styles.menuItem} onPress={handleEditCourses}>
-          <Text style={styles.menuItemText}>📚 Ders Seçimini Düzenle</Text>
-        </TouchableOpacity>
-
         <TouchableOpacity
-          style={[styles.menuItem, !canEnterMonthlyData && styles.disabledMenuItem]}
-          onPress={handleMonthlyDataEntry}
-          disabled={!canEnterMonthlyData}
+          style={[styles.menuItem, !canEditCourses && styles.disabledMenuItem]}
+          onPress={handleEditCourses}
+          disabled={!canEditCourses}
         >
-          <Text style={[styles.menuItemText, !canEnterMonthlyData && styles.disabledMenuItemText]}>
+          <Text style={[styles.menuItemText, !canEditCourses && styles.disabledMenuItemText]}>
+            📚 Ders Seçimini Düzenle
+          </Text>
+        </TouchableOpacity>
+        {!canEditCourses && (
+          <Text style={styles.restrictionInfoText}>
+            {getCourseEditingRestrictionMessage()}
+          </Text>
+        )}
+
+        {/* Aylık Veri Girişi butonu artık kısıtlamaya tabi değil */}
+        <TouchableOpacity
+          style={styles.menuItem}
+          onPress={handleMonthlyDataEntry}
+        >
+          <Text style={styles.menuItemText}>
             📝 Aylık Veri Girişi
           </Text>
         </TouchableOpacity>
-        {!canEnterMonthlyData && (
-          <Text style={styles.restrictionInfoText}>
-            {getEditingRestrictionMessage()}
-          </Text>
-        )}
+
 
         <TouchableOpacity
           style={styles.menuItem}
